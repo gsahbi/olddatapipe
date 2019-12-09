@@ -55,7 +55,8 @@ class fsScan(fitting):
                         yield meta, _file
 
                     # add to the already done files
-                    #with open(self.__register, "a") as regf:
-                    #    regf.write("\n%s,%s" % (str(ts), fn))
+                    if self.__register:
+                        with open(self.__register, "a") as regf:
+                            regf.write("\n%s,%s" % (str(ts), fn))
             else:
                 logging.info("No new file found !")
