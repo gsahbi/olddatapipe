@@ -1,0 +1,47 @@
+version: 1.0
+pipeline:
+  -
+    kind: fs_scan
+    spec:
+      url: ssh://foo:pass@localhost:22222/upload
+      filter : "*.csv"
+      walk: false
+      register: ./done.csv
+  -
+    kind: csv_panda
+    spec:
+      tidy:
+        -
+          kind: melt
+          spec:
+            id_vars: 1
+        - dropna
+        -
+          kind: split
+          spec:
+            col: 2
+            sep: " - "
+            new_cols:
+              - node
+              - port
+              - description
+              - metric
+
+  -
+    kind: influx_line
+    spec:
+      measurement: nio_unclassified
+      ts:
+        method: column
+        column: 1
+        format: '%s'   #'^\w+_(\d{8}-\d{4})'
+      fields:
+        -
+          column: value
+          name_from: metric
+      tags:
+        - node
+        - port
+        -
+          column: description
+          name: desc
