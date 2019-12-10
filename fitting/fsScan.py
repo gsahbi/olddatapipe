@@ -23,7 +23,10 @@ class fsScan(fitting):
         if self.__register and os.path.exists(self.__register):
             with open(self.__register, 'r') as f:
                 for line in csv.reader(f):
-                    done[line[1]] = int(line[0])
+                    if len(line) == 2:
+                        done[line[1]] = int(line[0])
+                    else:
+                        logging.warning("Bad line in register file %s : %s" % (self.__register, str(line)))
 
         with open_fs(self.__url) as home_fs:
             if self.__walk:
