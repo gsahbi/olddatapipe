@@ -1,8 +1,6 @@
 import logging
 import re
-from collections import defaultdict
 from datetime import datetime
-
 from . import fitting
 
 TS_FILE_MODIFIED = 1
@@ -39,7 +37,7 @@ class influxLine(fitting):
         out = name
         if len(tags):
             out = out + "," + ",".join(["%s=%s" % (str(a), str(b)) for a, b in tags.items()])
-        out = out + " " + ",".join(["%s=%s" % (str(a), str(b)) for a, b in fields.items()]) + " " + str(ts)
+        out = out + " " + ",".join(["%s=%s" % (str(a), str(b)) for a, b in fields.items()]) + " %d" % ts
         return out
 
     def __parse_ts_spec(self, spec):
@@ -160,7 +158,7 @@ class influxLine(fitting):
             tag_values[name] = val
 
         # process timestamp
-        ts = int(datetime.now().timestamp())
+        ts = datetime.now().timestamp() * 1e9
 
         if self.__ts['method'] == TS_FILE_MODIFIED and 'ts' in meta:
             ts = meta['ts']
@@ -176,34 +174,24 @@ class influxLine(fitting):
 
         elif self.__ts['method'] == TS_COLUMN:
             col = self.__ts['column']
-            if type(col) == int:
-                if col > len(res) or col < 0:
-                    logging.error("TS column index %s out of range !" % col)
-                else:
-                    d = list(res.items())[col-1][1]
-                    if type(d) == str:
-                        try:
-                            s = datetime.strptime(d, self.__ts['format'])
-                            ts = int(s.timestamp() * 10e6)
-                        except ValueError as e:
-                            logging.error(e)
-                    else:
-                        ts = int(d * 10e6)
-
+            d = None
+            # if col is an index find it
+            if type(col) == int and len(res) >= col >= 0:
+                d = list(res.items())[col-1][1]
             elif type(col) == str and col in res:
                 d = res[col]
-                if type(d) == str:
-                    try:
-                        s = datetime.strptime(d, self.__ts['format'])
-                        ts = int(s.timestamp() * 10e6)
-                    except ValueError as e:
-                        logging.error(e)
-                else:
-                    ts = int(d * 10e6)
             else:
                 logging.error("TS column name %s not found !" % col)
 
-
+            if d is not None:
+                if type(d) == str:
+                    try:
+                        s = datetime.strptime(d, self.__ts['format'])
+                        ts = s.timestamp() * 1e9
+                    except ValueError as e:
+                        logging.error(e)
+                else:
+                    ts = d * 1e9
         else:
             logging.error("Couldn't extract timestamp of measurement")
 

@@ -66,7 +66,7 @@ class fsScan(fitting):
                         # add to the already done files
                         if self.__register:
                             with open(self.__register, "a") as regf:
-                                regf.write("\n%s,%s" % (str(ts), fn))
+                                regf.write("%s,%s\n" % (str(ts), fn))
                     except Exception as x:
                         logging.error("Error processing file %s. %s" % (fn, str(x)))
             else:
