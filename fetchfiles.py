@@ -17,9 +17,11 @@ if __name__ == '__main__':
         format='%(asctime)-19.19s %(levelname)s:%(name)s:%(lineno)s: %(message)s')
     logging.getLogger(__name__).setLevel(logging.DEBUG)
 
-
-    with open("config.yaml", 'r') as ymlfile:
-        cfg = yaml.load(ymlfile, Loader=yaml.Loader)
+    try:
+        with open("config.yaml", 'r') as ymlfile:
+            cfg = yaml.load(ymlfile, Loader=yaml.Loader)
+    except Exception as x:
+        logging.error("Failed to read config file " + str(x))
+        exit(1)
     p = pipeline(cfg['pipeline'])
     p.flow()
-    # exit(main(cfg))

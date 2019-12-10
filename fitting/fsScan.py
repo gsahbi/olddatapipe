@@ -21,12 +21,15 @@ class fsScan(fitting):
 
         done = {}
         if self.__register and os.path.exists(self.__register):
-            with open(self.__register, 'r') as f:
-                for line in csv.reader(f):
-                    if len(line) == 2:
-                        done[line[1]] = int(line[0])
-                    else:
-                        logging.warning("Bad line in register file %s : %s" % (self.__register, str(line)))
+            try:
+                with open(self.__register, 'r') as f:
+                    for line in csv.reader(f):
+                        if len(line) == 2:
+                            done[line[1]] = int(line[0])
+                        else:
+                            logging.warning("Bad line in register file %s : %s" % (self.__register, str(line)))
+            except Exception as x:
+                logging.error(x)
 
         with open_fs(self.__url) as home_fs:
             if self.__walk:
@@ -52,14 +55,19 @@ class fsScan(fitting):
                     self.__ls[f.name] = modified
 
             if len(self.__ls) > 0:
+                logging.info("Found %d files." % len(self.__ls))
                 for fn, ts in self.__ls.items():
-                    with home_fs.open(fn) as _file:
-                        meta = {'ts': ts, 'name': fn}
-                        yield meta, _file
+                    try:
+                        logging.info("Opening file %s." % fn)
+                        with home_fs.open(fn) as _file:
+                            meta = {'ts': ts, 'name': fn}
+                            yield meta, _file
 
-                    # add to the already done files
-                    if self.__register:
-                        with open(self.__register, "a") as regf:
-                            regf.write("\n%s,%s" % (str(ts), fn))
+                        # add to the already done files
+                        if self.__register:
+                            with open(self.__register, "a") as regf:
+                                regf.write("\n%s,%s" % (str(ts), fn))
+                    except Exception as x:
+                        logging.error("Error processing file %s. %s" % (fn, str(x)))
             else:
                 logging.info("No new file found !")
