@@ -6,42 +6,48 @@ pipeline:
       url: ssh://foo:pass@localhost:22222/upload
       filter : "*.csv"
       walk: false
-      register: ./done.csv
-  -
-    kind: csv_panda
-    spec:
-      tidy:
-        -
-          kind: melt
-          spec:
-            id_vars: 1
-        - dropna
-        -
-          kind: split
-          spec:
-            col: 2
-            sep: " - "
-            new_cols:
-              - node
-              - port
-              - description
-              - metric
 
+  - csv_panda
+  -
+    kind: tidy_panda
+    spec:
+      -
+        kind: melt
+        spec:
+          id_vars: 1
+      - dropna
+      -
+        kind: split
+        spec:
+          col: 2
+          sep: " - "
+          new_cols:
+            - node
+            - port
+            - desc
+            - metric
+      -
+        kind: pivot
+        spec:
+          index:
+            - 1
+            - node
+            - port
+          columns: metric
+          values: value
+      - fix_column_names
   -
     kind: influx_line
     spec:
-      measurement: nio_unclassified
+      measurement: nio_unc
       ts:
         method: column
         column: 1
-        format: '%s'   #'^\w+_(\d{8}-\d{4})'
+        format: 's'   #'^\w+_(\d{8}-\d{4})'
       fields:
-        -
-          column: value
-          name_from: metric
+        - hc_out_octets
+        - hc_in_octets
+        - availability
       tags:
         - node
         - port
-        -
-          column: description
-          name: desc

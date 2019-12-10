@@ -14,12 +14,19 @@ class pipeline(object):
 
     def __build(self):
         for p in self.__cfg:
-            assert 'kind' in p
-            classname = to_camel_case(p['kind'])
+            spec = {}
+            if type(p) == str:
+                # assuming this doesn't require a spec
+                classname = to_camel_case(p)
+            elif 'kind' in p:
+                classname = to_camel_case(p['kind'])
+            else:
+                logging.error("Don't know how to parse : " + str(p))
+                raise ValueError
+            if 'spec' in p:
+                spec = p['spec']
             try:
-                if 'spec' not in p:
-                    p['spec'] = {}
-                self.__nodes.append(globals()[classname](p['spec']))
+                self.__nodes.append(globals()[classname](spec))
             except KeyError as e:
                 logging.fatal("Couldn't not create object of class " + classname + str(e))
 
