@@ -184,22 +184,22 @@ class influxLine(fitting):
                     if type(d) == str:
                         try:
                             s = datetime.strptime(d, self.__ts['format'])
-                            ts = int(s.timestamp() * 10e9)
+                            ts = int(s.timestamp() * 10e6)
                         except ValueError as e:
                             logging.error(e)
                     else:
-                        ts = int(d * 10e9)
+                        ts = int(d * 10e6)
 
             elif type(col) == str and col in res:
                 d = res[col]
                 if type(d) == str:
                     try:
                         s = datetime.strptime(d, self.__ts['format'])
-                        ts = int(s.timestamp() * 10e9)
+                        ts = int(s.timestamp() * 10e6)
                     except ValueError as e:
                         logging.error(e)
                 else:
-                    ts = int(d * 10e9)
+                    ts = int(d * 10e6)
             else:
                 logging.error("TS column name %s not found !" % col)
 
