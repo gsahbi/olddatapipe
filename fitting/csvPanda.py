@@ -29,6 +29,27 @@ class csvPanda(fitting):
         if 'tidy' in spec:
             self.__load_tidy_spec(spec['tidy'])
 
+    def __get_cols(self, cols, from_list: list):
+
+        if type(cols) == list:
+            out = []
+            for col in cols:
+                if type(col) == int and len(from_list) >= col > 0:
+                    out.append(from_list[col - 1])
+                elif type(col) == str and col in from_list:
+                    out.append(col)
+                else:
+                    return None
+            return out
+        else:
+            if type(cols) == int and len(from_list) >= cols > 0:
+                return from_list[cols - 1]
+            elif type(cols) == str and cols in from_list:
+                return cols
+            else:
+                return None
+
+
     def __load_tidy_spec(self, spec):
         if type(spec) != list:
             logging.error("Tidy spec must be a list of operations to a table.")
@@ -53,19 +74,8 @@ class csvPanda(fitting):
             elif fname == "melt":
 
                 def melt(df, **kwargs):
-
                     if 'id_vars' in kwargs:
-                        # convert columns from id to
-                        for i in range(len(kwargs['id_vars'])):
-                            col = kwargs['id_vars'][i] - 1
-                            if type(col) == int and len(df.columns) > col >= 0:
-                                kwargs['id_vars'][i] = df.columns[col]
-                            elif type(col) == str and col not in df.columns:
-                                logging.error("Column name not found : " + col)
-                                return df
-                            else:
-                                logging.error("Bad column name or index : " + col)
-                                return df
+                        kwargs['id_vars'] = self.__get_cols(kwargs['id_vars'], df.columns)
                     return pd.melt(df, **kwargs)
 
                 if 'id_vars' in args:
@@ -78,17 +88,11 @@ class csvPanda(fitting):
                 self.__tidy[fname] = Func(melt, args)
             elif fname == "split":
                 def split(df, col, new_cols, sep=',', replace=True):
-                    col = col - 1
-                    if type(col) == int and len(df.columns) > col >= 0:
-                        col = df.columns[col]
-                    elif type(col) == str and col not in df.columns:
-                        logging.error("Column name not found : " + col)
-                        return df
-                    else:
-                        logging.error("Bad column name or index : " + col)
-                        return df
-                    # TODO: validate new cols given
-                    assert type(new_cols) == list and isinstance(df, pd.DataFrame)
+                    col = self.__get_cols(col, df.columns)
+                    if col is None:
+                        logging.error("Bad parameter 'col' in split " + str(col))
+                        raise ValueError
+
                     df[new_cols] = df[col].str.split(sep, expand=True)
                     if replace:
                         df.drop(col, axis=1, inplace=True)
@@ -104,19 +108,19 @@ class csvPanda(fitting):
         meta, _file = data
 
         df = pd.DataFrame()
-        try:
-            df = pd.read_csv(_file,
-                             sep=self.__dialect['sep'],
-                             header=self.__dialect['header'])
+        # try:
+        df = pd.read_csv(_file,
+                         sep=self.__dialect['sep'],
+                         header=self.__dialect['header'])
 
-            # apply tidy functions
-            for k, f in self.__tidy.items():
-                df = f(df)
-                logging.info("Applied step [%s] to data frame" % k)
+        # apply tidy functions
+        for k, f in self.__tidy.items():
+            df = f(df)
+            logging.info("Applied step [%s] to data frame" % k)
 
-        except Exception as e:
-            logging.error(e)
-            raise e
+        # except Exception as e:
+        #     logging.error(e)
+        #     raise e
 
         dd = defaultdict(list)
         ddf = df.to_dict('records', into=dd)
