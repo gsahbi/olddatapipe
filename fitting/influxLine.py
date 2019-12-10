@@ -181,14 +181,14 @@ class influxLine(fitting):
                     logging.error("TS column index %s out of range !" % col)
                 else:
                     d = list(res.items())[col-1][1]
-                    if type(d) == str :
+                    if type(d) == str:
                         try:
                             s = datetime.strptime(d, self.__ts['format'])
                             ts = int(s.timestamp())
                         except ValueError as e:
                             logging.error(e)
                     else:
-                        ts = d
+                        ts = int(d)
 
             elif type(col) == str and col in res:
                 d = res[col]
@@ -199,7 +199,7 @@ class influxLine(fitting):
                     except ValueError as e:
                         logging.error(e)
                 else:
-                    ts = d
+                    ts = int(d)
             else:
                 logging.error("TS column name %s not found !" % col)
 
