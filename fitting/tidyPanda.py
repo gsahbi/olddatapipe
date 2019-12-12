@@ -75,12 +75,15 @@ class tidyPanda(fitting):
                 def split(df, col, new_cols, sep=',', replace=True):
                     col = get_cols(col, df.columns)
                     if col is None:
-                        logging.error("Bad parameter 'col' in split " + str(col))
-                        raise ValueError
+                        raise ValueError("Bad parameter 'col' in split " + str(col))
 
-                    df[new_cols] = df[col].str.split(sep, expand=True)
-                    if replace:
-                        df.drop(col, axis=1, inplace=True)
+                    try:
+                        df[new_cols] = df[col].str.split(sep, n=len(new_cols), expand=True)
+                        if replace:
+                            df.drop(col, axis=1, inplace=True)
+                    except Exception as e:
+                        raise RuntimeError("Runtime Error processing split operation on Dataframe." + e)
+
                     return df
 
                 if 'col' not in args or 'new_cols' not in args:
@@ -91,19 +94,20 @@ class tidyPanda(fitting):
                 def pivot(df, columns, values, index=None):
                     idx = get_cols(index, df.columns)
                     if idx is None:
-                        logging.warning("'index' in pivot " + str(index))
-                        raise ValueError
+                        raise ValueError("No 'index' in pivot " + str(index))
                     cols = get_cols(columns, df.columns)
                     if cols is None:
-                        logging.error("Bad parameter 'columns' in pivot " + str(columns))
-                        raise ValueError
+                        raise ValueError("Bad parameter 'columns' in pivot " + str(columns))
                     vals = get_cols(values, df.columns)
                     if vals is None:
-                        logging.error("Bad parameter 'values' in pivot " + str(values))
-                        raise ValueError
+                        raise ValueError("Bad parameter 'values' in pivot " + str(values))
 
-                    df = pd.pivot_table(df, values=vals, index=idx, columns=cols)
-                    df.reset_index(inplace=True)
+                    try:
+                        df = pd.pivot_table(df, values=vals, index=idx, columns=cols)
+                        df.reset_index(inplace=True)
+                    except Exception as e:
+                        raise RuntimeError("Runtime Error processing pivot operation on Dataframe." + e)
+
                     return df
 
                 if 'columns' not in args or 'values' not in args:
@@ -116,8 +120,10 @@ class tidyPanda(fitting):
         meta, df = data
 
         # apply tidy functions
-        for k, f in self.__tidy:
-            df = f(df)
-            logging.info("Applied step [%s] to data frame" % k)
-
+        try:
+            for k, f in self.__tidy:
+                df = f(df)
+                logging.info("Applied step [%s] to data frame" % k)
+        except Exception as e:
+            raise e
         yield meta, df

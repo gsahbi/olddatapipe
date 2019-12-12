@@ -34,5 +34,9 @@ class pipeline(object):
         for o in range(0, len(self.__nodes) - 1):
             self.__nodes[o].hook(self.__nodes[o + 1])
 
-    def flow(self, datain=None):
-        return self.__nodes[0].flow(datain)
+    def run(self, datain=None):
+        try:
+            return self.__nodes[0].flow(datain)
+        except Exception as e:
+            raise e
+        return 1
