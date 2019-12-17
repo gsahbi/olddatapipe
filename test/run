@@ -1,0 +1,21 @@
+#/bin/bash
+cd sftp
+
+# Build image
+if ! docker build --tag "test_sftp" . ; then
+    echo "Build failed"
+    exit 1
+fi
+
+# Generate temporary ssh keys for testing
+if [ ! -f "./files/id_rsa.pub" ]; then
+    ssh-keygen -t rsa -f "./files/id_rsa" -N ''  2>&1
+fi
+
+# Private key can not be read by others (sshd will complain)
+chmod go-rw "./files/id_rsa.pub"
+
+docker run --name "test_sftp_server" -d \
+    -v ~/dev/sftp:/home/foo/upload  \
+    -v $(pwd)/files/id_rsa.pub:/home/foo/.ssh/keys/id_rsa.pub:ro  \
+    -p 22222:22 -d test_sftp foo:pass:1001
