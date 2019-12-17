@@ -15,7 +15,7 @@ fi
 # Private key can not be read by others (sshd will complain)
 chmod go-rw "./files/id_rsa.pub"
 
-docker run --name "test_sftp_server" -d \
+docker run  -d \
     -v ~/dev/sftp:/home/foo/upload  \
     -v $(pwd)/files/id_rsa.pub:/home/foo/.ssh/keys/id_rsa.pub:ro  \
     -p 22222:22 -d test_sftp foo:pass:1001

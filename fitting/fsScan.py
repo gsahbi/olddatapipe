@@ -8,8 +8,15 @@ from . import fitting
 class fsScan(fitting):
     def __init__(self, spec):
         super().__init__(spec)
-        assert 'url' in spec
-        self.__url = spec['url']
+        self.__url = None
+        self.__con = None
+        if 'url' in spec :
+            self.__url = spec['url']
+        elif 'connection' in spec and type(spec['connection']) == dict:
+            self.__con = spec['connection']
+        else:
+            raise ValueError("Bad filesystem connection")
+
         self.__filter = spec['filter'] if 'filter' in spec else '*'
         self.__walk = spec['walk'] if 'walk' in spec else False
         self.__register = spec['register'] if 'register' in spec else None
@@ -31,9 +38,29 @@ class fsScan(fitting):
             except Exception as x:
                 logging.error(x)
 
-        with open_fs(self.__url) as home_fs:
+        path = ''
+        if self.__url:
+            home_fs = open_fs(self.__url)
+
+        elif self.__con:
+            c = self.__con
+            if c['type'] == 'ssh':
+                from fs.sshfs import SSHFS
+                if 'port'   not in c: c['port'] = 22
+                if 'passwd' not in c: c['passwd'] = None
+                if 'pkey'   not in c: c['pkey'] = None
+                if 'path' in c:  path = c['path']
+
+                home_fs = SSHFS(host=c['host'],
+                                user=c['user'], passwd=c['passwd'],
+                                pkey=c['pkey'], port=c['port'])
+
+            else:
+                raise ValueError("Unsupported type of connection")
+
+        with home_fs:
             if self.__walk:
-                for _p, f in home_fs.walk.info(filter=[self.__filter], namespaces=['details']):
+                for _p, f in home_fs.walk.info(path, filter=[self.__filter], namespaces=['details']):
                     if f.is_dir:
                         continue
 
@@ -45,7 +72,7 @@ class fsScan(fitting):
 
             else:
                 # list files in the specified path
-                iter = home_fs.filterdir('', files=[self.__filter], namespaces=['details'])
+                iter = home_fs.filterdir(path, files=[self.__filter], namespaces=['details'])
 
                 for f in filter(lambda f: not f.is_dir, iter):
                     modified = int(f.modified.timestamp())
@@ -58,6 +85,7 @@ class fsScan(fitting):
                 logging.info("Found %d files." % len(self.__ls))
                 for fn, ts in self.__ls.items():
                     try:
+                        fn = os.path.join(path, fn)
                         logging.info("Opening file %s." % fn)
                         with home_fs.open(fn) as _file:
                             meta = {'ts': ts, 'name': fn}

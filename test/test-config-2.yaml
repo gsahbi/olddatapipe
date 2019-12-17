@@ -7,8 +7,10 @@ pipeline:
         type: ssh
         host: localhost
         port: 22222
-        username: foo
-        key_path: ./test-pk.rsa
+        user: foo
+        #passwd: pass
+        pkey: test/sftp/files/id_rsa
+        path: /upload
       filter : "*.csv"
       walk: false
 
