@@ -63,29 +63,29 @@ class fsScan(fitting):
                 for _p, f in home_fs.walk.info(path, filter=[self.__filter], namespaces=['details']):
                     if f.is_dir:
                         continue
-
+                    fn = os.path.join(path, _p)
                     modified = int(f.modified.timestamp())
-                    if _p in done:
-                        if done[_p] >= modified:
+                    if fn in done:
+                        if done[fn] >= modified:
                             continue
-                    self.__ls[_p] = modified
+                    self.__ls[fn] = modified
 
             else:
                 # list files in the specified path
                 iter = home_fs.filterdir(path, files=[self.__filter], namespaces=['details'])
 
                 for f in filter(lambda f: not f.is_dir, iter):
+                    fn = os.path.join(path, f.name)
                     modified = int(f.modified.timestamp())
-                    if f.name in done:
-                        if done[f.name] >= modified:
+                    if fn in done:
+                        if done[fn] >= modified:
                             continue
-                    self.__ls[f.name] = modified
+                    self.__ls[fn] = modified
 
             if len(self.__ls) > 0:
                 logging.info("Found %d files." % len(self.__ls))
                 for fn, ts in self.__ls.items():
                     try:
-                        fn = os.path.join(path, fn)
                         logging.info("Opening file %s." % fn)
                         with home_fs.open(fn) as _file:
                             meta = {'ts': ts, 'name': fn}
