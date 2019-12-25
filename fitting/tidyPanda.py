@@ -96,9 +96,11 @@ class tidyPanda(fitting):
 
                             # re-collapse all columns starting from collapse to before last
                             tmp['n_cols'] = tmp.notnull().sum(axis=1)
-                            for index, r in tmp[tmp.n_cols > n_new_cols].iterrows():
-                                tmp.loc[index, collapse-1] = sep.join(r[collapse-1:r['n_cols']-1].tolist())
-                                tmp.loc[index, collapse] = r[r['n_cols']-1]
+                            cols = tmp.columns.tolist()
+                            for n in range(n_new_cols, n_split_cols):
+                                tmp.loc[tmp.n_cols == n+1, cols[collapse-1]] = tmp[tmp.n_cols == n+1][cols[collapse-1:n]].apply(sep.join, axis=1)
+                                tmp.loc[tmp.n_cols == n+1, cols[collapse]] = tmp[cols[n]]
+
                             # remove trailing columns
                             tmp.drop(tmp.columns[n_new_cols:], axis=1, inplace=True)
                             df[new_cols] = tmp

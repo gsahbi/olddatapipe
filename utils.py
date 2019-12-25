@@ -17,8 +17,6 @@ def get_cols(cols, from_list: list):
                 out.append(from_list[col - 1])
             elif type(col) == str and col in from_list:
                 out.append(col)
-            else:
-                return None
         return out
     else:
         if type(cols) == int and len(from_list) >= cols > 0:
