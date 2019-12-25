@@ -28,6 +28,7 @@ pipeline:
         spec:
           col: 2
           sep: " - "
+          collapse: '3'  # collapse the 3rd split column in case you get more than 4
           new_cols:
             - node
             - port

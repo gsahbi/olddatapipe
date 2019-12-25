@@ -72,24 +72,59 @@ class tidyPanda(fitting):
                 self.__tidy.append((fname, Func(melt, args)))
 
             elif fname == "split":
-                def split(df, col, new_cols, sep=',', replace=True):
+                def split(df, col, new_cols, sep=',', collapse=None, replace=True):
                     col = get_cols(col, df.columns)
                     if col is None:
                         raise ValueError("Bad parameter 'col' in split " + str(col))
 
                     try:
-                        df[new_cols] = df[col].str.split(sep, n=len(new_cols), expand=True)
+                        n_new_cols = len(new_cols)
+                        tmp = df[col].copy().str.split(sep, expand=True)
+                        n_split_cols = len(tmp.columns)
+                        # if resulting columns is different
+                        if n_split_cols <= n_new_cols:
+                            logging.warning("Unexpected format, found only %d/%d columns. "
+                                            "Will adjust to lowest" %(n_split_cols, n_new_cols))
+                            new_cols = new_cols[:min(n_split_cols, n_new_cols)]
+                            df[new_cols] = tmp
+                        else:
+                            if collapse is None:
+                                logging.warning("Unexpected format, found %d columns expected %d."
+                                                "Abandoning .. please configure a collapse column"
+                                                % (n_split_cols, n_new_cols))
+                                return None
+
+                            # re-collapse all columns starting from collapse to before last
+                            tmp['n_cols'] = tmp.notnull().sum(axis=1)
+                            for index, r in tmp[tmp.n_cols > n_new_cols].iterrows():
+                                tmp.loc[index, collapse-1] = sep.join(r[collapse-1:r['n_cols']-1].tolist())
+                                tmp.loc[index, collapse] = r[r['n_cols']-1]
+                            # remove trailing columns
+                            tmp.drop(tmp.columns[n_new_cols:], axis=1, inplace=True)
+                            df[new_cols] = tmp
                         if replace:
                             df.drop(col, axis=1, inplace=True)
                     except Exception as e:
-                        raise RuntimeError("Runtime Error processing split operation on Dataframe." + e)
+                        raise RuntimeError("Runtime Error processing split operation on Dataframe." + str(e))
+                        return None
 
                     return df
 
                 if 'col' not in args or 'new_cols' not in args:
                     logging.error("did not specify the target col and new cols")
                     continue
+
+                if 'collapse' in args:
+                    _collapse = args['collapse']
+
+                    if type(_collapse) != int:
+                        raise ValueError("Bad parameter 'collapse' : %s, should be integer" % str(_collapse))
+
+                    if type(_collapse) != int or 1 > _collapse >= len(args['new_cols']):
+                        raise ValueError("Bad parameter 'collapse' : %s, should be within new_cols range" % str(_collapse))
+
                 self.__tidy.append((fname, Func(split, args)))
+
             elif fname == "pivot":
                 def pivot(df, columns, values, index=None):
                     idx = get_cols(index, df.columns)

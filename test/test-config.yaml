@@ -3,7 +3,7 @@ pipeline:
   -
     kind: fs_scan
     spec:
-      url: ssh://foo:pass@localhost:22222/upload
+      url: osfs:////Users/sahbi/dev/sftp
       filter : "*.csv"
       walk: false
 
@@ -21,6 +21,7 @@ pipeline:
         spec:
           col: 2
           sep: " - "
+          collapse: 3
           new_cols:
             - node
             - port
