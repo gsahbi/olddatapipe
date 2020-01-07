@@ -152,6 +152,32 @@ class tidyPanda(fitting):
                     continue
                 self.__tidy.append((fname, Func(pivot, args)))
 
+            elif fname == "group_by":
+                def group_by(df, columns=None, function='sum'):
+                    cols = get_cols(columns, df.columns)
+                    if cols is None:
+                        raise ValueError("Bad parameter 'columns' in group_by " + str(columns))
+                    try:
+                        df = df.groupby(cols, axis=0, as_index=False, squeeze=True).sum()
+                    except Exception as e:
+                        raise RuntimeError("Runtime Error processing group_by operation on Dataframe." + e)
+                    return df
+
+                self.__tidy.append((fname, Func(group_by, args)))
+
+            elif fname == "dropcol":
+                def drop_col(df, columns=None):
+                    cols = get_cols(columns, df.columns)
+                    if cols is None:
+                        raise ValueError("Bad parameter 'columns' in drop_col " + str(columns))
+                    try:
+                        df.drop(cols, axis=1, inplace=True)
+                    except Exception as e:
+                        raise RuntimeError("Runtime Error processing drop_col operation on Dataframe." + e)
+                    return df
+
+                self.__tidy.append((fname, Func(drop_col, args)))
+
     def _process(self, data):
         logging.info('Processing data at ' + self.__class__.__name__)
         meta, df = data

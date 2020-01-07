@@ -4,7 +4,7 @@ pipeline:
     kind: fs_scan
     spec:
       url: osfs:////Users/sahbi/dev/sftp
-      filter : "*.csv"
+      filter : "reg07*.csv"
       walk: false
 
   - csv_panda
@@ -12,30 +12,21 @@ pipeline:
     kind: tidy_panda
     spec:
       -
-        kind: melt
+        kind: dropcol
         spec:
-          id_vars: 1
-      - dropna
+          columns:
+            - 4
+            - 5
+            - 14
+            - 15
+            - 16
       -
-        kind: split
+        kind: group_by
         spec:
-          col: 2
-          sep: " - "
-          collapse: 3
-          new_cols:
-            - node
-            - port
-            - desc
-            - metric
-      -
-        kind: pivot
-        spec:
-          index:
+          columns:
             - 1
-            - node
-            - port
-          columns: metric
-          values: value
+            - 2
+            - 3
       - fix_column_names
   -
     kind: influx_line
@@ -44,11 +35,19 @@ pipeline:
       ts:
         method: column
         column: 1
-        format: 's'   #'^\w+_(\d{8}-\d{4})'
+        format: '%Y%m%d-%H%M'
       fields:
-        - hc_out_octets
-        - hc_in_octets
-        - availability
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
       tags:
-        - node
-        - port
+        - 2
+        - 3
