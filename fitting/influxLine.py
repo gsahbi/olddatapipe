@@ -102,4 +102,5 @@ class influxLine(fitting):
                                                               numeric_precision=6)
         # print all lines
         print("\n".join(lines))
+        logging.info("Exported %d records." % len(lines))
         yield None
