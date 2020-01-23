@@ -192,7 +192,8 @@ class tidyPanda(fitting):
                 def replace(df, column=None, new_column=None, regex=False, remap={}):
                     col = get_cols(column, df.columns)
                     if col is None:
-                        raise ValueError("Bad or missing parameter 'column' in replace " + str(column))
+                        logging.error("Bad or missing parameter 'column' in replace " + str(column))
+                        return df
                     inplace = new_column is None
                     try:
                         if not inplace:
