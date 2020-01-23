@@ -1,0 +1,86 @@
+version: 1.0
+pipeline:
+  -
+    kind: fs_scan
+    spec:
+      url: osfs:////Users/sahbi/dev/sftp
+      filter : "reg07*.csv"
+      walk: false
+
+  - csv_panda
+  -
+    kind: tidy_panda
+    spec:
+      -
+        kind: dropcol
+        spec:
+          columns:
+            - 4
+            - 5
+            - 14
+            - 15
+            - 16
+      -
+        kind: group_by
+        spec:
+          columns:
+            - 1
+            - 2
+            - 3
+      -
+        kind: replace
+        spec:
+          column: 2
+          new_column: from_operator
+          regex: true
+          remap:
+            -
+              match: ^.*VIVA.*
+              value: stc
+            -
+              match: .*ZAIN.*
+              value: Zain
+            -
+              match: IBCF_(H|S)\d+
+              value: Ooredoo
+      -
+        kind: replace
+        spec:
+          column: 3
+          new_column: to_operator
+          remap:
+            -
+              match: .*VIVA.*
+              value: stc
+            -
+              match: .*ZAIN.*
+              value: Zain
+            -
+              match: IBCF_(H|S)\d+
+              value: Ooredoo
+      - fix_column_names
+  -
+    kind: influx_line
+    spec:
+      measurement: nio_sip_perf
+      ts:
+        method: column
+        column: 1
+        format: '%Y%m%d-%H%M'
+      fields:
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+      tags:
+        - 2
+        - 3
+        - 15
+        - 16
