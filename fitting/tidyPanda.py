@@ -23,6 +23,17 @@ class tidyPanda(fitting):
         self.__tidy = []
         self.__load_tidy_spec(spec)
 
+    def __parse_remap(self, remap):
+        out = {}
+        for op in remap:
+            if type(op) != dict or {'match', 'value'} <= set(op):
+                logging.error("Ingnoring malformed map " + str(op))
+            m = op['match']
+            v = op['value']
+            #if type(m) == str and m[0] == m[-1] == '/' :
+            out[m] = v
+        return out
+
     def __load_tidy_spec(self, spec):
         if type(spec) != list:
             logging.error("Tidy spec must be a list of operations to a table.")
@@ -173,10 +184,28 @@ class tidyPanda(fitting):
                     try:
                         df.drop(cols, axis=1, inplace=True)
                     except Exception as e:
-                        raise RuntimeError("Runtime Error processing drop_col operation on Dataframe." + e)
+                        raise RuntimeError("Runtime Error processing drop_col operation on Dataframe." + srt(e))
                     return df
 
                 self.__tidy.append((fname, Func(drop_col, args)))
+            elif fname == "replace":
+                def replace(df, column=None, new_column=None, regex=False, remap={}):
+                    col = get_cols(column, df.columns)
+                    if col is None:
+                        raise ValueError("Bad or missing parameter 'column' in replace " + str(column))
+                    inplace = new_column is None
+                    try:
+                        if not inplace:
+                            df[new_column] = df[col]
+                            col = new_column
+                        df.replace({col:remap}, regex=True, inplace=True)
+                    except Exception as e:
+                        raise RuntimeError("Runtime Error processing replace operation on Dataframe." + str(e))
+                    return df
+                if "remap" not in args or type(args["remap"]) != list:
+                    raise ValueError("tidyPanda.replace : remap should be an array of mappings")
+                args["remap"] = self.__parse_remap(args["remap"])
+                self.__tidy.append((fname, Func(replace, args)))
 
     def _process(self, data):
         logging.info('Processing data at ' + self.__class__.__name__)

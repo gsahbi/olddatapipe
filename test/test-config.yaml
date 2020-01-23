@@ -4,10 +4,16 @@ pipeline:
     kind: fs_scan
     spec:
       url: osfs:////Users/sahbi/dev/sftp
-      filter : "reg07*.csv"
+      filter : "reg08*.csv"
       walk: false
 
-  - csv_panda
+  -
+    kind: csv_panda
+    spec:
+      dtype:
+        -
+          column: Status
+          type: str
   -
     kind: tidy_panda
     spec:
@@ -17,16 +23,46 @@ pipeline:
           columns:
             - 4
             - 5
-            - 14
-            - 15
-            - 16
       -
-        kind: group_by
+        kind: replace
         spec:
-          columns:
-            - 1
-            - 2
-            - 3
+          column: 2
+          new_column: from_operator
+          regex: true
+          remap:
+            -
+              match: ^.*VIVA.*
+              value: stc
+            -
+              match: .*ZAIN.*
+              value: Zain
+            -
+              match: IBCF_(H|S)\d+
+              value: Ooredoo
+      -
+        kind: replace
+        spec:
+          column: 3
+          new_column: to_operator
+          remap:
+            -
+              match: .*VIVA.*
+              value: stc
+            -
+              match: .*ZAIN.*
+              value: Zain
+            -
+              match: IBCF_(H|S)\d+
+              value: Ooredoo
+      -
+        kind: replace
+        spec:
+          column: 4
+          new_column: status_group
+          remap:
+            -
+              match: (\d)(?:\d\d)
+              value: \1xx
       - fix_column_names
   -
     kind: influx_line
@@ -37,17 +73,12 @@ pipeline:
         column: 1
         format: '%Y%m%d-%H%M'
       fields:
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-        - 9
-        - 10
-        - 11
-        - 12
-        - 13
-        - 14
+        - count
       tags:
         - 2
         - 3
+        - 4
+        - 5
+        - 7
+        - 8
+        - 9
