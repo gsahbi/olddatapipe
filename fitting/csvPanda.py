@@ -14,6 +14,25 @@ class csvPanda(fitting):
                 'sep': ',',
                 'header': 0
             }
+        self.dtype = None
+        if 'dtype' in spec:
+            self.dtype = self.__parse_dtype(spec['dtype'])
+
+    def __parse_dtype(self, dtype):
+        out = {}
+        for op in dtype:
+            if type(op) != dict or {'column', 'type'} <= set(op):
+                logging.error("Ingnoring malformed dtype " + str(op))
+            m = op['column']
+            v = op['type']
+            if v == 'str':
+                v = str
+            elif v == 'int':
+                v = int
+            elif v == 'float':
+                v = float
+            out[m] = v
+        return out
 
     def _process(self, data):
         logging.info('Processing data at ' + self.__class__.__name__)
@@ -21,6 +40,8 @@ class csvPanda(fitting):
 
         df = pd.read_csv(_file,
                          sep=self.__dialect['sep'],
-                         header=self.__dialect['header'])
+                         header=self.__dialect['header'],
+                         dtype=self.dtype
+                         )
 
         yield meta, df
