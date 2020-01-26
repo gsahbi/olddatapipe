@@ -3,16 +3,9 @@ pipeline:
   -
     kind: fs_scan
     spec:
-      connection:
-        type: ssh
-        host: localhost
-        port: 22222
-        user: foo
-        #passwd: pass
-        pkey: test/sftp/files/id_rsa
-        path: /upload
-      filter : "*.csv"
+      url: osfs:////Users/sahbi/dev/sftp
       walk: false
+      filter : "*GRAFANA_ISP_LINKS*.csv"
 
   - csv_panda
   -
@@ -28,7 +21,7 @@ pipeline:
         spec:
           col: 2
           sep: " - "
-          collapse: '3'  # collapse the 3rd split column in case you get more than 4
+          collapse: 3  # collapse the 3rd split column in case you get more than 4
           new_cols:
             - node
             - port
@@ -41,13 +34,26 @@ pipeline:
             - 1
             - node
             - port
+            - desc
           columns: metric
           values: value
       - fix_column_names
+      -
+        kind: replace
+        spec:
+          column: desc
+          new_column: isp
+          remap:
+            -
+              match: ^(?i)[conectd]+ to (\w+).*
+              value: \1
+            -
+              match: ^(?i)tengige.*$
+              value: QTEL
   -
     kind: influx_line
     spec:
-      measurement: nio_unc
+      measurement: test
       ts:
         method: column
         column: 1
@@ -59,3 +65,4 @@ pipeline:
       tags:
         - node
         - port
+        - isp

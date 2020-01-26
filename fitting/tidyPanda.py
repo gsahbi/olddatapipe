@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import defaultdict
 
 import pandas as pd
@@ -23,7 +24,7 @@ class tidyPanda(fitting):
         self.__tidy = []
         self.__load_tidy_spec(spec)
 
-    def __parse_remap(self, remap):
+    def __parse_replace(self, remap):
         out = {}
         for op in remap:
             if type(op) != dict or {'match', 'value'} <= set(op):
@@ -192,20 +193,25 @@ class tidyPanda(fitting):
                 def replace(df, column=None, new_column=None, regex=False, remap={}):
                     col = get_cols(column, df.columns)
                     if col is None:
-                        logging.error("Bad or missing parameter 'column' in replace " + str(column))
+                        logging.error("Bad or missing parameter 'column' = %s in map " % str(column))
                         return df
                     inplace = new_column is None
                     try:
                         if not inplace:
                             df[new_column] = df[col]
-                            col = new_column
-                        df.replace({col:remap}, regex=True, inplace=True)
+                        else:
+                            new_column = col
+                        df.replace({new_column:remap}, regex=True, inplace=True)
+                        if not inplace:
+                            # unchanged values will be replaced by NaN
+                            df.loc[df[col] == df[new_column], new_column] = None
+
                     except Exception as e:
                         raise RuntimeError("Runtime Error processing replace operation on Dataframe." + str(e))
                     return df
                 if "remap" not in args or type(args["remap"]) != list:
                     raise ValueError("tidyPanda.replace : remap should be an array of mappings")
-                args["remap"] = self.__parse_remap(args["remap"])
+                args["remap"] = self.__parse_replace(args["remap"])
                 self.__tidy.append((fname, Func(replace, args)))
 
     def _process(self, data):
