@@ -24,15 +24,24 @@ class tidyPanda(fitting):
         self.__tidy = []
         self.__load_tidy_spec(spec)
 
-    def __parse_replace(self, remap):
+    def __parse_remap(self, remap):
         out = {}
         for op in remap:
             if type(op) != dict or {'match', 'value'} != set(op):
-                logging.error("Ingnoring malformed map " + str(op))
+                logging.error("Ignoring malformed map " + str(op))
             m = op['match']
             v = op['value']
-            #if type(m) == str and m[0] == m[-1] == '/' :
-            out[m] = v
+            if type(m) == list:
+                for mm in m:
+                    try:
+                        out[mm] = v
+                    except Exception as x:
+                        logging.error("Ignoring malformed 'match' : " + str(x))
+            else:
+                try:
+                    out[m] = v
+                except Exception as x:
+                    logging.error("Ignoring malformed 'match' : " + str(x))
         return out
 
     def __load_tidy_spec(self, spec):
@@ -190,7 +199,7 @@ class tidyPanda(fitting):
                 self.__tidy.append((fname, Func(drop_col, args)))
 
             elif fname == "replace":
-                def replace(df, column=None, new_column=None, regex=False, remap={}):
+                def replace(df, column=None, new_column=None, default=None, regex=False, remap={}):
                     col = get_cols(column, df.columns)
                     if col is None:
                         logging.error("Bad or missing parameter 'column' = %s in map " % str(column))
@@ -201,10 +210,10 @@ class tidyPanda(fitting):
                             df[new_column] = df[col]
                         else:
                             new_column = col
-                        df.replace({new_column:remap}, regex=True, inplace=True)
+                        df.replace({new_column:remap}, regex=regex, inplace=True)
                         if not inplace:
                             # unchanged values will be replaced by NaN
-                            df.loc[df[col] == df[new_column], new_column] = None
+                            df.loc[df[col] == df[new_column], new_column] = default
 
                     except Exception as e:
                         raise RuntimeError("Runtime Error processing replace operation on Dataframe." + str(e))
@@ -217,7 +226,7 @@ class tidyPanda(fitting):
                                          "as key:value dict or an array of definitions")
                 else:
                     raise ValueError("tidyPanda.replace : remap definition is mandatory")
-                args["remap"] = self.__parse_replace(args["remap"])
+                args["remap"] = self.__parse_remap(args["remap"])
                 self.__tidy.append((fname, Func(replace, args)))
 
             elif fname == "join":

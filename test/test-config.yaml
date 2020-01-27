@@ -28,7 +28,7 @@ pipeline:
         spec:
           column: 2
           new_column: from_operator
-          regex: true
+          regex: True
           remap:
             -
               match: ^.*VIVA.*
@@ -44,6 +44,7 @@ pipeline:
         spec:
           column: 3
           new_column: to_operator
+          regex: True
           remap:
             -
               match: .*VIVA.*
@@ -59,6 +60,7 @@ pipeline:
         spec:
           column: Status
           new_column: status_group
+          regex: True
           remap:
             match: ^(\d)(?:\d\d)$
             value: \1xx
@@ -68,6 +70,7 @@ pipeline:
         spec:
           column: q850_1st_release_cause
           new_column: q850_code
+          regex: True
           remap:
             match: ^.*\((\d+)\).*
             value: \1
@@ -78,7 +81,116 @@ pipeline:
             - status
             - q850_code
           new_column: status_q850
-          separator: "-"
+          separator: "+"
+      -
+        kind: replace
+        spec:
+          column: status_q850
+          new_column: cause_origin
+          default: Unclassified
+          remap:
+            -
+              value: User
+              match:
+                -  486+17
+                -  487+19
+                -  480+31
+                -  480+19
+                -  487+57
+                -  480+20
+                -  487+20
+                -  487+1
+                -  480+16
+                -  487+18
+                -  487+21
+                -  487+16
+                -  486+486
+            -
+              value: Network
+              match:
+                -  487+31
+                -  487+4
+                -  487+102
+                -  480+102
+                -  480+18
+                -  500+38
+                -  500+3
+                -  100+65535
+                -  502+27
+                -  500+41
+                -  500+4
+                -  480+10
+                -  404+1
+                -  487+487
+                -  480+21
+                -  503+41
+                -  180+65535
+                -  487+28
+                -  482+21
+                -  488+38
+                -  480+66
+                -  484+28
+                -  404+65535
+                -  603+21
+                -  480+34
+                -  500+57
+                -  500+65535
+                -  500+44
+                -  480+65535
+                -  500+88
+                -  491+65535
+                -  500+58
+                -  487+127
+                -  183+19
+                -  408+18
+                -  480+127
+                -  500+200
+                -  183+65535
+                -  603+65535
+                -  500+16
+                -  65534+65535
+                -  400+127
+                -  500+127
+                -  500+65
+                -  580+580
+                -  500+96
+                -  488+65535
+                -  500+63
+                -  415+65535
+                -  487+17
+                -  484+102
+                -  480+25
+                -  183+20
+                -  487+113
+                -  500+19
+                -  500+47
+                -  183+1
+                -  480+27
+                -  500+98
+                -  500+100
+                -  580+127
+                -  181+65535
+                -  408+65535
+                -  480+480
+                -  487+22
+                -  500+42
+                -  500+102
+                -  504+65535
+                -  100+31
+                -  183+4
+                -  183+18
+                -  403+127
+                -  408+127
+                -  483+25
+                -  488+50
+                -  500+9
+                -  500+20
+                -  500+18
+                -  500+43
+                -  503+127
+                -  503+47
+                -  603+17
+
   -
     kind: influx_line
     spec:
@@ -91,3 +203,4 @@ pipeline:
         - count
       tags:
         - status_q850
+        - cause_origin
