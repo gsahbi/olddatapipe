@@ -44,12 +44,8 @@ pipeline:
           column: desc
           new_column: isp
           remap:
-            -
-              match: ^(?i)[conectd]+ to (\w+).*
-              value: \1
-            -
-              match: ^(?i)tengige.*$
-              value: QTEL
+            match: ^(?i)tengige.*$
+            value: QTEL
   -
     kind: influx_line
     spec:

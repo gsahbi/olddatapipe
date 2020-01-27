@@ -41,9 +41,7 @@ class tidyPanda(fitting):
             return
 
         for p in spec:
-            fname = None
             args = {}
-
             if type(p) == str:
                 fname = p
             elif type(p) == dict and 'kind' in p:
@@ -57,6 +55,7 @@ class tidyPanda(fitting):
             # what operation is required
             if fname == "dropna":
                 self.__tidy.append((fname, Func(lambda df: df.dropna())))
+
             elif fname == "fix_column_names":
                 def fix_column_names(df):
                     df.columns = df.columns.str.strip()\
@@ -189,6 +188,7 @@ class tidyPanda(fitting):
                     return df
 
                 self.__tidy.append((fname, Func(drop_col, args)))
+
             elif fname == "replace":
                 def replace(df, column=None, new_column=None, regex=False, remap={}):
                     col = get_cols(column, df.columns)
@@ -209,8 +209,14 @@ class tidyPanda(fitting):
                     except Exception as e:
                         raise RuntimeError("Runtime Error processing replace operation on Dataframe." + str(e))
                     return df
-                if "remap" not in args or type(args["remap"]) != list:
-                    raise ValueError("tidyPanda.replace : remap should be an array of mappings")
+                if "remap" in args:
+                    if type(args["remap"]) == dict:
+                        args["remap"] = [args["remap"]]
+                    elif type(args["remap"]) != list:
+                        raise ValueError("tidyPanda.replace : remap should be a mapping definition "
+                                         "as key:value dict or an array of definitions")
+                else:
+                    raise ValueError("tidyPanda.replace : remap definition is mandatory")
                 args["remap"] = self.__parse_replace(args["remap"])
                 self.__tidy.append((fname, Func(replace, args)))
 
