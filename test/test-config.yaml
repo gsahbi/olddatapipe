@@ -57,13 +57,28 @@ pipeline:
       -
         kind: replace
         spec:
-          column: 4
+          column: Status
           new_column: status_group
           remap:
-            -
-              match: (\d)(?:\d\d)
-              value: \1xx
+            match: ^(\d)(?:\d\d)$
+            value: \1xx
       - fix_column_names
+      -
+        kind: replace
+        spec:
+          column: q850_1st_release_cause
+          new_column: q850_code
+          remap:
+            match: ^.*\((\d+)\).*
+            value: \1
+      -
+        kind: join
+        spec:
+          columns:
+            - status
+            - q850_code
+          new_column: status_q850
+          separator: "-"
   -
     kind: influx_line
     spec:
@@ -75,10 +90,4 @@ pipeline:
       fields:
         - count
       tags:
-        - 2
-        - 3
-        - 4
-        - 5
-        - 7
-        - 8
-        - 9
+        - status_q850

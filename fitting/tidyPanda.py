@@ -27,7 +27,7 @@ class tidyPanda(fitting):
     def __parse_replace(self, remap):
         out = {}
         for op in remap:
-            if type(op) != dict or {'match', 'value'} <= set(op):
+            if type(op) != dict or {'match', 'value'} != set(op):
                 logging.error("Ingnoring malformed map " + str(op))
             m = op['match']
             v = op['value']
@@ -184,7 +184,7 @@ class tidyPanda(fitting):
                     try:
                         df.drop(cols, axis=1, inplace=True)
                     except Exception as e:
-                        raise RuntimeError("Runtime Error processing drop_col operation on Dataframe." + srt(e))
+                        raise RuntimeError("Runtime Error processing drop_col operation on Dataframe." + str(e))
                     return df
 
                 self.__tidy.append((fname, Func(drop_col, args)))
@@ -219,6 +219,29 @@ class tidyPanda(fitting):
                     raise ValueError("tidyPanda.replace : remap definition is mandatory")
                 args["remap"] = self.__parse_replace(args["remap"])
                 self.__tidy.append((fname, Func(replace, args)))
+
+            elif fname == "join":
+                def _join(df, columns=None, new_column=None, separator=','):
+                    cols = get_cols(columns, df.columns)
+                    if cols is None:
+                        raise ValueError("Bad parameter 'columns' in join " + str(columns))
+                    if new_column is None:
+                        new_column = separator.join(cols)
+                    try:
+                        df[new_column] = df[cols].apply(separator.join, axis=1)
+                    except Exception as e:
+                        raise RuntimeError("Runtime Error processing join operation on Dataframe." + str(e))
+                    return df
+
+                if "columns" not in args:
+                    raise ValueError("tidyPanda.join : columns definition is mandatory")
+                elif type(args["columns"]) != list or (type(args["columns"]) == list and len(args["columns"])<2):
+                    raise ValueError("tidyPanda.join : 'columns' argument must be a list of 2 at least")
+
+                if "separator" not in args or type(args['separator']) != str:
+                    raise ValueError("tidyPanda.join : 'separator' argument must be a string")
+
+                self.__tidy.append((fname, Func(_join, args)))
 
     def _process(self, data):
         logging.info('Processing data at ' + self.__class__.__name__)

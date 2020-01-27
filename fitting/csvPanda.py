@@ -21,7 +21,7 @@ class csvPanda(fitting):
     def __parse_dtype(self, dtype):
         out = {}
         for op in dtype:
-            if type(op) != dict or {'column', 'type'} <= set(op):
+            if type(op) != dict or {'column', 'type'} != set(op):
                 logging.error("Ingnoring malformed dtype " + str(op))
             m = op['column']
             v = op['type']
