@@ -106,7 +106,7 @@ class fsScan(fitting):
                             logging.error("Error processing file %s. %s" % (fn, str(x)))
                 else:
                     logging.info("No new file found !")
-                    if self.__retries == 0 :
+                    if retries == 0:
                         break
                     else:
                         logging.info("Retrying after %d seconds." % self.__retry_delay)
