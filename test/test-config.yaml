@@ -6,7 +6,8 @@ pipeline:
       url: osfs:////Users/sahbi/dev/sftp
       filter : "reg08*.csv"
       walk: false
-
+      retries: 2
+      retry_delay: 5
   -
     kind: csv_panda
     spec:
