@@ -37,11 +37,12 @@ class csvPanda(fitting):
     def _process(self, data):
         logging.info('Processing data at ' + self.__class__.__name__)
         meta, _file = data
-
-        df = pd.read_csv(_file,
-                         sep=self.__dialect['sep'],
-                         header=self.__dialect['header'],
-                         dtype=self.dtype
-                         )
-
-        yield meta, df
+        try:
+            df = pd.read_csv(_file,
+                             sep=self.__dialect['sep'],
+                             header=self.__dialect['header'],
+                             dtype=self.dtype
+                             )
+            yield meta, df
+        except Exception as x:
+            logging.error("Error loading csv file %s." % (_file))
