@@ -1,7 +1,7 @@
 appdirs==1.4.3
 bcrypt==3.1.7
 cffi==1.13.2
-cryptography==2.8
+cryptography==3.2
 fs==2.4.11
 fs.sshfs==0.12.2
 numpy==1.17.4
